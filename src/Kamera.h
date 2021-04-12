@@ -2,6 +2,7 @@
 #define Kamera_H
 #include <WiFi.h>
 #include <WiFiUdp.h>
+
 #include <SSDP.h>
 #define DEBUG 1
 //#define DEBUG 0
@@ -36,6 +37,7 @@ public:
     String getVersions();
     String getAvailableApiList();
     String startLiveview();
+    String stopLiveview();
     String actTakePicture();
 };
 

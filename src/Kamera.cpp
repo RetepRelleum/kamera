@@ -1,5 +1,7 @@
 #include <Kamera.h>
 #include <Arduino.h>
+#define DEBUG 1
+//#define DEBUG 0
 Kamera::Kamera(String ssid, String password)
 {
   this->ssid = ssid;
@@ -24,7 +26,7 @@ void Kamera::loop()
   case initKamera:
     Serial.println(getVersions());
     Serial.println(getAvailableApiList());
-
+    Serial.println(startLiveview());
     status = takePic;
     break;
   case takePic:
@@ -32,6 +34,10 @@ void Kamera::loop()
     {
       timestampPic = millis();
       actTakePicture();
+      if (count = 0)
+      {
+        Serial.println(stopLiveview());
+      }
       count++;
       if (count > 3)
       {
@@ -79,6 +85,7 @@ int Kamera::statusInit()
   Serial.println(password.c_str());
   WiFi.begin(ssid.c_str(), password.c_str());
   delay(2000);
+
   if (WiFi.status() != WL_CONNECTED)
   {
     if (DEBUG)
@@ -163,8 +170,8 @@ String Kamera::httpPost(String jString)
   while (client.available())
   {
     String line = client.readStringUntil('\r');
-    res = line.substring(line.indexOf("\"result\":") + 9, line.length() - 1);
     Serial.print(line);
+    res = line.substring(line.indexOf("\"result\":") + 9, line.length() - 1);
   }
   if (DEBUG)
   {
@@ -181,6 +188,8 @@ String Kamera::getVersions()
   String son = json;
   son.replace("METHODE", "getVersions");
   String ret = httpPost(son);
+  ret.replace("[[\"", "");
+  ret.replace("\"]]", "");
   return ret;
 }
 
@@ -188,8 +197,10 @@ String Kamera::getAvailableApiList()
 {
   String son = json;
   son.replace("METHODE", "getAvailableApiList");
-  httpPost(son);
   String ret = httpPost(son);
+  ret.replace("[[\"", "");
+  ret.replace("\"]]", "");
+  ret.replace("\",\"", "\r\n");
   return ret;
 }
 
@@ -197,8 +208,10 @@ String Kamera::startLiveview()
 {
   String son = json;
   son.replace("METHODE", "startLiveview");
-  httpPost(son);
   String ret = httpPost(son);
+  ret.replace("[[\"", "");
+  ret.replace("\"]]", "");
+
   return ret;
 }
 
@@ -206,7 +219,14 @@ String Kamera::actTakePicture()
 {
   String son = json;
   son.replace("METHODE", "actTakePicture");
-  httpPost(son);
+  String ret = httpPost(son);
+  return ret;
+}
+
+String Kamera::stopLiveview()
+{
+  String son = json;
+  son.replace("METHODE", "stopLiveview");
   String ret = httpPost(son);
   return ret;
 }
