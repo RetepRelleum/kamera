@@ -137,6 +137,7 @@ int SSDP::statusSearchRead()
             Serial.println(s);
         }
     }
+    return 1;
 }
 void SSDP::pLocation(String s)
 {
@@ -154,7 +155,7 @@ void SSDP::pLocation(String s)
         ip[2] = sp.substring(0, sp.indexOf(".")).toInt();
         sp.remove(0, sp.indexOf(".") + 1);
         ip[3] = sp.substring(0, sp.indexOf(":")).toInt();
-        sp.remove(1, sp.indexOf(":") + 1);
+        sp.remove(0, sp.indexOf(":") + 1);
         host = IPAddress(ip[0], ip[1], ip[2], ip[3]);
         port = sp.substring(0, sp.indexOf("/")).toInt();
         xml = sp.substring(sp.indexOf("/") + 1, sp.length());
@@ -247,6 +248,7 @@ int SSDP::statusReadLocationInfo()
             Serial.println(actionList_URL);
         }
     }
+    return 1;
 }
 bool SSDP::ready()
 {
