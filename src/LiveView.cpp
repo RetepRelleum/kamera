@@ -117,7 +117,7 @@ bool LiveView::connect(String liveViewUrl)
 
 void LiveView::loop()
 {
-    if (!client.connected())
+    if (!client.connected()) 
     {
         connect(liveViewUrl);
     }
