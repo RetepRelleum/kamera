@@ -2,8 +2,10 @@
 #define Kamera_H
 #include <WiFi.h>
 #include <WiFiUdp.h>
-
+#include <JPEGDEC.h>
 #include <SSDP.h>
+#include <LiveView.h>
+
 
 struct CommonHeader
 {
@@ -23,13 +25,17 @@ private:
         initKamera,
         takePic,
         liveViewS,
+        analyseMotion,
         idle
     };
+    LiveView liveView;
+
     CommonHeader *commonHeader;
     int count = 0;
     Status status = init;
     char buffer[200];
     SSDP ssdp;
+    uint8_t *lvBuffer;
     uint32_t lastmillis;
     String ssid;
     String password;
@@ -38,8 +44,7 @@ private:
     String json = "{\"version\":\"1.0\",\"id\":1,\"method\":\"METHODE\",\"params\":[]}";
     String liveViewUrl;
     String httpPost(String jString);
-    void liveView();
-    bool liveViewInit = false;
+
     uint32_t timestampPic = millis();
 
     uint16_t swap_uint16(uint16_t val)
@@ -52,6 +57,7 @@ private:
         return (val << 16) | (val >> 16);
     }
 
+
 public:
     Kamera(String ssid, String password);
     void loop();
@@ -61,6 +67,9 @@ public:
     String startLiveview();
     String stopLiveview();
     String actTakePicture();
+
+
+     
 };
 
 #endif

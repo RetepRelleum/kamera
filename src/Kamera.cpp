@@ -1,7 +1,10 @@
 #include <Kamera.h>
 #include <Arduino.h>
-#define DEBUG 1
+
+#define DEBUG 0
 //#define DEBUG 0
+
+
 Kamera::Kamera(String ssid, String password)
 {
   this->ssid = ssid;
@@ -10,6 +13,8 @@ Kamera::Kamera(String ssid, String password)
 
 void Kamera::loop()
 {
+  String deb;
+  String deb2;
   switch (status)
   {
   case init:
@@ -24,22 +29,32 @@ void Kamera::loop()
     }
     break;
   case initKamera:
-    Serial.println(getVersions());
-    Serial.println(getAvailableApiList());
-    Serial.println(startLiveview());
+    deb = getVersions();
+    deb2 = getAvailableApiList();
+    if (DEBUG)
+    {
+      Serial.println(deb);
+      Serial.println(deb2);
+    }
     status = liveViewS;
     timestampPic = millis();
     break;
   case liveViewS:
-    if (timestampPic + 20000 > millis())
+    deb = startLiveview();
+    if (DEBUG)
     {
-      liveView();
+      Serial.println("startLiveview :");
+      Serial.println(deb);
     }
-    else
+    liveView.connect(liveViewUrl);
+    liveView.loop();
+    deb = stopLiveview();
+    if (DEBUG)
     {
-      Serial.println(stopLiveview());
-      status = takePic;
+      Serial.print("stopLiveview :");
+      Serial.println(deb);
     }
+    status = idle;
     break;
   case takePic:
     if (timestampPic + 1000 < millis())
@@ -58,6 +73,11 @@ void Kamera::loop()
     }
     break;
   case idle:
+    if (timestampPic + 2000 < millis())
+    {
+      timestampPic = millis();
+      status = liveViewS;
+    }
 
     break;
   }
@@ -117,6 +137,7 @@ int Kamera::statusInit()
 
 String Kamera::httpPost(String jString)
 {
+
   if (DEBUG)
   {
     Serial.print("Msg send: ");
@@ -182,7 +203,10 @@ String Kamera::httpPost(String jString)
   while (client.available())
   {
     String line = client.readStringUntil('\r');
-    Serial.print(line);
+    if (DEBUG)
+    {
+      Serial.print(line);
+    }
     res = line.substring(line.indexOf("\"result\":") + 9, line.length() - 1);
   }
   if (DEBUG)
@@ -244,142 +268,4 @@ String Kamera::stopLiveview()
   son.replace("METHODE", "stopLiveview");
   String ret = httpPost(son);
   return ret;
-}
-void Kamera::liveView()
-{
-  if (!liveViewInit)
-  {
-    String sp = liveViewUrl;
-    sp.replace("http://", "");
-    int ip[4];
-    ip[0] = sp.substring(0, sp.indexOf(".")).toInt();
-    sp.remove(0, sp.indexOf(".") + 1);
-    ip[1] = sp.substring(0, sp.indexOf(".")).toInt();
-    sp.remove(0, sp.indexOf(".") + 1);
-    ip[2] = sp.substring(0, sp.indexOf(".")).toInt();
-    sp.remove(0, sp.indexOf(".") + 1);
-    ip[3] = sp.substring(0, sp.indexOf(":")).toInt();
-    sp.remove(0, sp.indexOf(":") + 1);
-    IPAddress hostLv = IPAddress(ip[0], ip[1], ip[2], ip[3]);
-    Serial.println(sp.substring(0, sp.indexOf("/")));
-    long portLv = sp.substring(0, sp.indexOf("/")).toInt();
-    String pathLv = sp.substring(sp.indexOf("/"), sp.length());
-
-    if (DEBUG)
-    {
-      Serial.print("connecting to  liveView : ");
-      Serial.print(hostLv.toString());
-      Serial.print(":");
-      Serial.println(portLv);
-    }
-
-    if (!clientLive.connect(hostLv, portLv))
-    {
-
-      return;
-    }
-    else
-    {
-      if (DEBUG)
-      {
-        Serial.print("connected to ");
-        Serial.print(hostLv.toString());
-        Serial.print(":");
-        Serial.println(portLv);
-      }
-    }
-
-    // This will send the request to the server
-    clientLive.print(String("GET " + pathLv + " HTTP/1.1\r\n" + "Host: " + hostLv.toString() + "\r\n"));
-    clientLive.println("Accept: image/gif, image/jpeg, */*");
-    clientLive.println("Connection: close");
-    // End of headers
-    clientLive.println();
-    // Request body
-
-    if (DEBUG)
-    {
-      Serial.println("wait for data");
-    }
-    liveViewInit = true;
-    while (!clientLive.available() && millis() - lastmillis < 8000)
-    {
-    } // wait 8s max for answer
-
-    // Read all the lines of the reply from server and print them to Serial
-    String res;
-    if (clientLive.available())
-    {
-    }
-    lastmillis = millis();
-    while (!clientLive.available() && millis() - lastmillis < 8000)
-    {
-    } // wait 8s max for answer
-
-    String data = "";
-    uint8_t buffer[200];
-    if (clientLive.available())
-    {
-      uint8_t ch = 9;
-      while (clientLive.available())
-      {
-        ch = clientLive.read();
-        Serial.write((char)ch);
-        if (ch == 0XFF)
-        {
-          break;
-        }
-      }
-      Serial.println();
-      Serial.println("  --> Read Common Header ");
-      int a = clientLive.read(buffer, 7);
-      commonHeader = (CommonHeader *)buffer;
-      Serial.print("Payload type :");
-      Serial.println(commonHeader->payloadType, HEX);
-      Serial.print("Sequence number:");
-      Serial.println(swap_uint16(commonHeader->sequenceNumber));
-      Serial.print("Time stamp:");
-      Serial.println(swap_uint32(commonHeader->timeStamp));
-      a = clientLive.read(buffer, 128);
-      Serial.print("Start code  fixed (0x24, 0x35, 0x68, 0x79):");
-      Serial.print(" 0x");
-      Serial.print(buffer[0], HEX);
-      Serial.print(" 0x");
-      Serial.print(buffer[1], HEX);
-      Serial.print(" 0x");
-      Serial.print(buffer[2], HEX);
-      Serial.print(" 0x");
-      Serial.println(buffer[3], HEX);
-      Serial.print("Payload data size:");
-      Serial.println(buffer[4] << + buffer[5] * 256 + buffer[6]);
-      Serial.print("Padding size:");
-      Serial.println(buffer[7]);
-      for (int i = 8; i < a; i++)
-      {
-        Serial.print(" 0x");
-        Serial.println(buffer[i], HEX);
-      }
-    }
-  }
-  if (clientLive.available())
-  {
-    char buffer[200];
-    int a = clientLive.read((uint8_t *)buffer, 200);
-    for (int i = 0; i < a; i++)
-    {
-      Serial.print(" 0x");
-      Serial.print(buffer[i], HEX);
-    }
-  }
-  else
-  {
-    if (DEBUG)
-    {
-      Serial.println();
-      Serial.println("----closing connection----");
-      Serial.println();
-    }
-    clientLive.stop();
-    status = idle;
-  }
 }
