@@ -94,6 +94,7 @@
                 "/home/retep/Arduino/hardware/espressif/esp32/variants/d32_pro",
                 "/home/retep/Arduino/hardware/espressif/esp32/libraries/WiFi/src",
                 "/home/retep/Arduino/libraries/Kamera/src",
+                "/home/retep/Arduino/libraries/JPEGDEC/src",
                 "/home/retep/Arduino/hardware/espressif/esp32/tools/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/5.2.0",
                 "/home/retep/Arduino/hardware/espressif/esp32/tools/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/5.2.0/xtensa-esp32-elf",
                 "/home/retep/Arduino/hardware/espressif/esp32/tools/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/5.2.0/backward",
