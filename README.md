@@ -1,5 +1,6 @@
 # kamera
 ESP 32 controll for Kameras testes with DSC-HX50V
+for Kameras not tested
 HDR-AS15
 HDR-AS20
 HDR-AZ1 
