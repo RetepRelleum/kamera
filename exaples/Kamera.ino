@@ -19,29 +19,14 @@ void setup()
 {
   Serial.begin(115200);
   delay(10);
- /* if (!SD.begin(4))
-  {
-    Serial.println("Card Mount Failed");
-    return;
-  }
-  else
-  {
-    Serial.println("Card Mount OK");
-  }
-  WiFi.mode(WIFI_AP_STA);
-  Serial.println("Creating Accesspoint");
-  WiFi.softAP(assid, asecret, 7, 0, 5);
-  Serial.print("IP address:\t");
-  Serial.println(WiFi.softAPIP());
-  WebServer.begin(server);
-  */
+
   timestamp = millis();
 }
 void loop()
 {
 
   kamera.loop();
-//  WebServer.loop();
+
   if (timestamp + 30000 < millis())
   {
     timestamp = millis();
