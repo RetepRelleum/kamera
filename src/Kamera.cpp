@@ -4,7 +4,6 @@
 #define DEBUG 0
 //#define DEBUG 0
 
-
 Kamera::Kamera(String ssid, String password)
 {
   this->ssid = ssid;
@@ -13,6 +12,8 @@ Kamera::Kamera(String ssid, String password)
 
 void Kamera::loop()
 {
+
+
   String deb;
   String deb2;
   switch (status)
@@ -37,49 +38,41 @@ void Kamera::loop()
       Serial.println(deb2);
     }
     status = liveViewS;
-    timestampPic = millis();
-    break;
-  case liveViewS:
     deb = startLiveview();
     if (DEBUG)
     {
-      Serial.println("startLiveview :");
       Serial.println(deb);
-    }
-    liveView.connect(liveViewUrl);
-    liveView.loop();
-    deb = stopLiveview();
-    if (DEBUG)
-    {
-      Serial.print("stopLiveview :");
-      Serial.println(deb);
-    }
-    status = idle;
-    break;
-  case takePic:
-    if (timestampPic + 1000 < millis())
-    {
-      timestampPic = millis();
-      actTakePicture();
-      if (count == 0)
-      {
-        Serial.println(stopLiveview());
-      }
-      count++;
-      if (count > 3)
-      {
-        status = idle;
-      }
-    }
-    break;
-  case idle:
-    if (timestampPic + 2000 < millis())
-    {
-      timestampPic = millis();
-      status = liveViewS;
     }
 
     break;
+  case liveViewS:
+    if (!liveView.loop())
+    {
+      status = liveViewS;
+    }
+    break;
+  case takePic:
+    deb = actTakePicture();
+    if (DEBUG)
+    {
+      Serial.println(deb);
+    }
+    deb = startLiveview();
+    status = liveViewS;
+    break;
+  case idle:
+    break;
+  }
+  if (liveView.motionDetect())
+  {
+    deb = stopLiveview();
+    if (DEBUG)
+    {
+      Serial.println("Motion detect");
+      Serial.println(deb);
+    }
+
+    status = takePic;
   }
 }
 
@@ -247,10 +240,9 @@ String Kamera::startLiveview()
   String ret = httpPost(son);
   ret.replace("[\"", "");
   ret.replace("\"]", "");
-
   liveViewUrl = ret;
   String sp = ret;
-
+  liveView.connect(liveViewUrl);
   return ret;
 }
 
@@ -264,6 +256,7 @@ String Kamera::actTakePicture()
 
 String Kamera::stopLiveview()
 {
+  liveView.disconnect();
   String son = json;
   son.replace("METHODE", "stopLiveview");
   String ret = httpPost(son);

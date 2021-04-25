@@ -28,6 +28,7 @@ private:
     uint8_t paddingSize;
     uint8_t *jPegBuffer;
     JPEGDEC jpeg;
+    bool isMotion=false;
     bool readCommonHeader();
     bool readPayloadHeader();
     bool waitForData(int size);
@@ -48,7 +49,10 @@ private:
 public:
 
     bool connect(String liveViewUrl);
-    void loop();
+    bool loop();
+    bool motionDetect();
+    void disconnect();
+    
 };
 
 #endif

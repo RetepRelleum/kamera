@@ -1,63 +1,61 @@
 #include <LiveView.h>>
 #include <Arduino.h>
 
-#define DEBUG 1
+#define DEBUG 0
 //#define DEBUG 0
 
 double xrgb[9][3];
 size_t sw, sh;
-double sumE;
+double sumE = 0;
 
 int drawMCU(JPEGDRAW *pDraw)
 {
-
-  size_t x = 0;
-  size_t k = 0;
-  if (DEBUG)
-  {
-    Serial.print("pDraw->iBpp :");
-    Serial.print(pDraw->iBpp);
-    Serial.print(" pDraw->iHeight :");
-    Serial.print(pDraw->iHeight);
-    Serial.print(" pDraw->iWidth :");
-    Serial.print(pDraw->iWidth);
-    Serial.print(" pDraw->pPixels :");
-    Serial.print(pDraw->pPixels[0]);
-    Serial.print(" pDraw->x :");
-    Serial.print(pDraw->x);
-    Serial.print(" pDraw->y :");
-    Serial.println(pDraw->y);
-  }
-  for (size_t w = 0; w < pDraw->iWidth; w++)
-  {
-    for (size_t h = 0; h < pDraw->iHeight; h++)
+    size_t x = 0;
+    size_t k = 0;
+    if (DEBUG)
     {
-      if (DEBUG)
-      {
-        Serial.print(pDraw->x + w);
-        Serial.print(" ");
-        Serial.print(pDraw->y + h);
-        Serial.print(" ");
-        Serial.print(pDraw->pPixels[x], HEX);
-      }
-      k = (pDraw->x + w) / (sw / 3) + 3 * (pDraw->y + h) / (sh / 3);
-      x = w * pDraw->iHeight + h;
-      if (DEBUG)
-      {
-        Serial.print(" ");
-        Serial.print(k);
-        Serial.print(" ");
-        Serial.println(x);
-      }
-      xrgb[k][0] += (uint8_t)((pDraw->pPixels[x] & 0xF800) >> 11);
-      xrgb[k][1] += (uint8_t)((pDraw->pPixels[x] & 0x07E0) >> 5);
-      xrgb[k][2] += (uint8_t)(pDraw->pPixels[x] & 0x001F);
+        Serial.print("pDraw->iBpp :");
+        Serial.print(pDraw->iBpp);
+        Serial.print(" pDraw->iHeight :");
+        Serial.print(pDraw->iHeight);
+        Serial.print(" pDraw->iWidth :");
+        Serial.print(pDraw->iWidth);
+        Serial.print(" pDraw->pPixels :");
+        Serial.print(pDraw->pPixels[0]);
+        Serial.print(" pDraw->x :");
+        Serial.print(pDraw->x);
+        Serial.print(" pDraw->y :");
+        Serial.println(pDraw->y);
     }
-  }
 
-  return 1;
+    for (size_t w = 0; w < pDraw->iWidth; w++)
+    {
+        for (size_t h = 0; h < pDraw->iHeight; h++)
+        {
+            if (DEBUG)
+            {
+                Serial.print(pDraw->x + w);
+                Serial.print(" ");
+                Serial.print(pDraw->y + h);
+                Serial.print(" ");
+                Serial.print(pDraw->pPixels[x], HEX);
+            }
+            k = (pDraw->x + w) / (sw / 3) + 3 * (pDraw->y + h) / (sh / 3);
+            x = w * pDraw->iHeight + h;
+            if (DEBUG)
+            {
+                Serial.print(" ");
+                Serial.print(k);
+                Serial.print(" ");
+                Serial.println(x);
+            }
+            xrgb[k][0] += (uint8_t)((pDraw->pPixels[x] & 0xF800) >> 11);
+            xrgb[k][1] += (uint8_t)((pDraw->pPixels[x] & 0x07E0) >> 5);
+            xrgb[k][2] += (uint8_t)(pDraw->pPixels[x] & 0x001F);
+        }
+    }
+    return 1;
 }
-
 
 void LiveView::init(String liveViewUrl)
 {
@@ -74,11 +72,9 @@ void LiveView::init(String liveViewUrl)
     ip[3] = sp.substring(0, sp.indexOf(":")).toInt();
     sp.remove(0, sp.indexOf(":") + 1);
     host = IPAddress(ip[0], ip[1], ip[2], ip[3]);
-    long port = sp.substring(0, sp.indexOf("/")).toInt();
+    port = sp.substring(0, sp.indexOf("/")).toInt();
     path = sp.substring(sp.indexOf("/"), sp.length());
 }
-
-
 
 bool LiveView::connect(String liveViewUrl)
 {
@@ -115,9 +111,10 @@ bool LiveView::connect(String liveViewUrl)
     }
 }
 
-void LiveView::loop()
+bool LiveView::loop()
 {
-    if (!client.connected()) 
+
+    if (!client.connected())
     {
         connect(liveViewUrl);
     }
@@ -130,37 +127,59 @@ void LiveView::loop()
         if (!waitForData(8))
         {
             client.stop();
-            return;
+            return false;
         }
-
+        if (DEBUG)
+        {
+            Serial.println("Read Common Header");
+        }
         if (!readCommonHeader())
         {
             client.stop();
-            return;
+            return false;
         }
-
+        if (DEBUG)
+        {
+            Serial.println("Read Payload Header");
+        }
         if (!waitForData(128 + 8))
         {
             client.stop();
-            return;
+            return false;
         }
         if (!readPayloadHeader())
         {
             client.stop();
-            return;
+            return false;
         }
         if (commonHeader.payloadType == 0X01)
         {
+            if (DEBUG)
+            {
+                Serial.println("Payload Type 0X01 Read Jpeg Data");
+            }
             if (!readJpegData())
             {
                 client.stop();
-                return;
-            };
+                return false;
+            }
+            if (!decodeJpeg())
+            {
+                client.stop();
+                return false;
+            }
         }
         else
         {
+            if (DEBUG)
+            {
+                Serial.println("Payload Type > 0X01 ");
+            }
+            for (size_t i = 0; i < (payloadDataSize + paddingSize); i++)
+                client.read();
         }
     }
+    return true;
 }
 
 bool LiveView::readCommonHeader()
@@ -188,6 +207,7 @@ bool LiveView::readCommonHeader()
         Serial.print("Time stamp:");
         Serial.println(swap_uint32(commonHeaderP->timeStamp));
     }
+    return true;
 }
 
 bool LiveView::readPayloadHeader()
@@ -252,7 +272,7 @@ bool LiveView::readJpegData()
     jPegBuffer = (uint8_t *)malloc(payloadDataSize + paddingSize);
     uint32_t c = 0;
     uint32_t ix = 0;
-    while (ix <= payloadDataSize + paddingSize)
+    while (ix < (payloadDataSize + paddingSize))
     {
         if (((payloadDataSize + paddingSize) - ix) >= 200)
         {
@@ -266,64 +286,70 @@ bool LiveView::readJpegData()
                 return false;
             c = client.read(buffer, ((payloadDataSize + paddingSize) - ix));
         }
-    }
-    for (size_t i = 0; i < c; i++)
-    {
-        jPegBuffer[ix] = buffer[i];
+
+        for (size_t i = 0; i < c; i++)
+        {
+            jPegBuffer[ix] = buffer[i];
+            ix++;
+        }
     }
     return true;
 }
 
 bool LiveView::decodeJpeg()
 {
+    if (jpeg.openRAM((uint8_t *)jPegBuffer, payloadDataSize, drawMCU))
     {
-        if (jpeg.openRAM((uint8_t *)jPegBuffer,    payloadDataSize , drawMCU))
+        if (DEBUG)
         {
-            if (DEBUG)
-            {
-                Serial.println("Successfully opened JPEG image");
-                Serial.printf("Image size: %d x %d, orientation: %d, bpp: %d\n", jpeg.getWidth(), jpeg.getHeight(), jpeg.getOrientation(), jpeg.getBpp());
-            }
+            Serial.println("Successfully opened JPEG image");
+            Serial.printf("Image size: %d x %d, orientation: %d, bpp: %d\n", jpeg.getWidth(), jpeg.getHeight(), jpeg.getOrientation(), jpeg.getBpp());
         }
-        else
-        {
-            Serial.println("Not Successfully opened JPEG image:");
-            Serial.println(jpeg.getLastError());
-        }
-        for (size_t i = 0; i < 9; i++)
-        {
-            for (size_t i2 = 0; i2 < 3; i2++)
-            {
-                xrgb[i][i2] = 0;
-            }
-        }
-        sw = jpeg.getWidth();
-        sh = jpeg.getHeight();
-        jpeg.decode(0, 0, 0);
-        jpeg.close();
     }
+    else
+    {
+        Serial.println("Not Successfully opened JPEG image:");
+        Serial.println(jpeg.getLastError());
+    }
+    for (size_t i = 0; i < 9; i++)
+    {
+        for (size_t i2 = 0; i2 < 3; i2++)
+        {
+            xrgb[i][i2] = 0;
+        }
+    }
+    sw = jpeg.getWidth() / 8;
+    sh = jpeg.getHeight() / 8;
+    jpeg.decode(0, 0, JPEG_SCALE_EIGHTH);
+    jpeg.close();
+
     double sum = 0;
     for (size_t i = 0; i < 9; i++)
     {
         if (i % 3 == 0)
         {
-            Serial.println();
+            //       Serial.println();
         }
         for (size_t i2 = 0; i2 < 3; i2++)
         {
-            Serial.print(xrgb[i][i2] / (sw * sh / 9));
+            //        Serial.print(xrgb[i][i2] / (sw * sh / 9));
             sum += xrgb[i][i2] / (sw * sh / 9);
-            Serial.print(" ");
+            //     Serial.print(" ");
         }
-        Serial.print(" ¦ ");
+        //   Serial.print(" ¦ ");
     }
-    Serial.println();
-    Serial.println(sum);
-    Serial.println();
+
+    Serial.print(sum);
+    Serial.print("  ");
 
     if (!isnan(sum))
     {
-        Serial.println(abs(100.0 / sumE * (sum - sumE)));
+        Serial.print(abs(100.0 / sumE * (sum - sumE)));
+        Serial.print("->");
+        if (sumE != 0 && sum != 0)
+        {
+            isMotion = abs(100.0 / sumE * (sum - sumE)) > 1;
+        }
         sumE = sum;
     }
 
@@ -333,5 +359,18 @@ bool LiveView::decodeJpeg()
         Serial.println("----closing connection----");
         Serial.println();
     }
-    clientLive.stop();
+
+    return true;
+}
+
+bool LiveView::motionDetect()
+{
+    return isMotion;
+}
+
+void LiveView::disconnect()
+{
+    sumE = 0;
+    isMotion = false;
+    client.stop();
 }
