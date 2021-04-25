@@ -1,43 +1,8 @@
 # kamera
-ESP 32 controll for Kameras testes with DSC-HX50V
-for Kameras not tested
-HDR-AS15
-HDR-AS20
-HDR-AZ1 
-HDR-AS30V
-AS200V
-HDR-AS100V
-FDR-X1000V
-HDR-AS50 
-HDR-MV1
-HDR-AS300
-FDR-X3000 
-ILCE-7 
-ILCE-7M2 
-ILCE-7R 
-ILCE-7RM2 
-ILCE-7S 
-ILCE-7SM2 
-ILCE-5000 
-ILCE-5100 
-ILCE-6000 
-ILCE-6300 
-ILCE-6500 
-NEX-5R 
-NEX-5T 
-NEX-6 
-DSC-HX60/V 
-DSC-HX80 
-DSC-HX90/V 
-DSC-HX400/V 
-DSC-WX500 
-DSC-RX1RM2 
-DSC-RX10M2 
-DSC-RX10M3
-DSC-RX100M3
-DSC-RX100M4 
-DSC-RX100M5 
-ILCE-QX1
-DSC-QX30 
-DSC-QX10 
-DSC-QX100 
+## ESP 32 control for Kameras testes with Sony DSC-HX50V
+
+### take pikture with motion control 
+
+use Sony Camera Remote API beta SDK
+
+<https://developer.sony.com/file/download/sony-camera-remote-api-beta-sdk-2/>
