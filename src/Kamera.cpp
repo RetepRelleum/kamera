@@ -13,7 +13,6 @@ Kamera::Kamera(String ssid, String password)
 void Kamera::loop()
 {
 
-
   String deb;
   String deb2;
   switch (status)
@@ -262,3 +261,12 @@ String Kamera::stopLiveview()
   String ret = httpPost(son);
   return ret;
 }
+
+uint8_t *Kamera::getJpeg()
+{
+  return liveView.getJpeg();
+}
+
+    uint32_t Kamera::getJpegSize(){
+      return liveView.getJpegSize();
+    }

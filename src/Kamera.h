@@ -42,6 +42,8 @@ public:
     String startLiveview();
     String stopLiveview();
     String actTakePicture();
+    uint8_t *getJpeg();
+    uint32_t getJpegSize();
 };
 
 #endif

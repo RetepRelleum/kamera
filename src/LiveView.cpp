@@ -374,3 +374,12 @@ void LiveView::disconnect()
     isMotion = false;
     client.stop();
 }
+
+uint8_t *LiveView::getJpeg()
+{
+    return jPegBuffer;
+}
+uint32_t LiveView::getJpegSize()
+{
+    return payloadDataSize + paddingSize;
+}
