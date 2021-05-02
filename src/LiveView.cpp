@@ -163,11 +163,12 @@ bool LiveView::loop()
                 client.stop();
                 return false;
             }
-            if (!decodeJpeg())
+                     if (!decodeJpeg())
             {
                 client.stop();
                 return false;
             }
+            
         }
         else
         {
@@ -339,13 +340,13 @@ bool LiveView::decodeJpeg()
         //   Serial.print(" ¦ ");
     }
 
-    Serial.print(sum);
-    Serial.print("  ");
+    // Serial.print(sum);
+    // Serial.print("  ");
 
     if (!isnan(sum))
     {
-        Serial.print(abs(100.0 / sumE * (sum - sumE)));
-        Serial.print("->");
+        //      Serial.print(abs(100.0 / sumE * (sum - sumE)));
+        //     Serial.print("->");
         if (sumE != 0 && sum != 0)
         {
             isMotion = abs(100.0 / sumE * (sum - sumE)) > 1;

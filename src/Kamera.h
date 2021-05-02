@@ -17,7 +17,9 @@ private:
         takePic,
         liveViewS,
         analyseMotion,
-        idle
+        idle,
+        zoomIn,
+        zoomOut
     };
     LiveView liveView;
     SSDP ssdp;
@@ -32,6 +34,10 @@ private:
     String liveViewUrl;
     String httpPost(String jString);
     uint32_t timestampPic = millis();
+    String actTakePicture();
+    String actZoomIn();
+    String actZoomOut();
+    bool motion=false;
 
 public:
     Kamera(String ssid, String password);
@@ -41,9 +47,15 @@ public:
     String getAvailableApiList();
     String startLiveview();
     String stopLiveview();
-    String actTakePicture();
+    void actZoomInS();
+    void actZoomOutS();
+    void motionDeOn();
+    void motionDeOf();
+    void click();
     uint8_t *getJpeg();
     uint32_t getJpegSize();
+
+  
 };
 
 #endif

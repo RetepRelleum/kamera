@@ -1,7 +1,7 @@
 #include <Kamera.h>
 #include <Arduino.h>
 
-#define DEBUG 0
+#define DEBUG 1
 //#define DEBUG 0
 
 Kamera::Kamera(String ssid, String password)
@@ -42,27 +42,40 @@ void Kamera::loop()
     {
       Serial.println(deb);
     }
-
     break;
   case liveViewS:
-    if (!liveView.loop())
-    {
-      status = liveViewS;
-    }
+    liveView.loop();
     break;
   case takePic:
+    deb = stopLiveview();
+    if (DEBUG)
+    {
+      Serial.println(deb);
+    }
     deb = actTakePicture();
     if (DEBUG)
     {
       Serial.println(deb);
     }
     deb = startLiveview();
+    if (DEBUG)
+    {
+      Serial.println(deb);
+    }
+    status = liveViewS;
+    break;
+  case zoomIn:
+    actZoomIn();
+    status = liveViewS;
+    break;
+  case zoomOut:
+    actZoomOut();
     status = liveViewS;
     break;
   case idle:
     break;
   }
-  if (liveView.motionDetect())
+  if (liveView.motionDetect()&& motion)
   {
     deb = stopLiveview();
     if (DEBUG)
@@ -262,11 +275,54 @@ String Kamera::stopLiveview()
   return ret;
 }
 
+String Kamera::actZoomIn()
+{
+  String son = json;
+  son.replace("METHODE", "actZoom");
+  son.replace("[]", "[\"in\",\"1shot\"]");
+  String ret = httpPost(son);
+  return ret;
+}
+
+String Kamera::actZoomOut()
+{
+  String son = json;
+  son.replace("METHODE", "actZoom");
+  son.replace("[]", "[\"out\",\"1shot\"]");
+  String ret = httpPost(son);
+  return ret;
+}
+
 uint8_t *Kamera::getJpeg()
 {
   return liveView.getJpeg();
 }
 
-    uint32_t Kamera::getJpegSize(){
-      return liveView.getJpegSize();
-    }
+uint32_t Kamera::getJpegSize()
+{
+  return liveView.getJpegSize();
+}
+
+void Kamera::click()
+{
+  status = takePic;
+}
+
+void Kamera::actZoomOutS()
+{
+  status = zoomOut;
+}
+void Kamera::actZoomInS()
+{
+  status = zoomIn;
+}
+
+void Kamera::motionDeOf()
+{
+  motion = false;
+}
+void Kamera::motionDeOn()
+{
+  motion = true;
+}
+
